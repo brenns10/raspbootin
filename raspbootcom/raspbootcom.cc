@@ -121,6 +121,12 @@ void send_kernel(int fd, const char *file) {
     return;
   }
 
+  int oflg = UnixError::check("getting tty mode",
+		  fcntl(fd, F_GETFL));
+  oflg &= ~O_NONBLOCK;
+  UnixError::check("clearing non-blocking",
+		  fcntl(fd, F_SETFL, oflg));
+
   while(keep_running && (size > 0)) {
     char buf[BUF_SIZE];
     ssize_t pos = 0;
@@ -134,6 +140,9 @@ void send_kernel(int fd, const char *file) {
       pos += len2;
     }
   }
+  oflg |= O_NONBLOCK;
+  UnixError::check("setting non-blocking",
+		  fcntl(fd, F_SETFL, oflg));
 
   fprintf(stderr, "### finished sending\n\r");
 }
